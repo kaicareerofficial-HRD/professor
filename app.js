@@ -81,12 +81,14 @@ function choose(id) {
 const empty = message => '<p class="empty">'+esc(message)+'</p>';
 const box = (title,items) => '<section class="box"><h3>'+title+'</h3>'+(items.length?'<ul>'+items.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':empty('등록된 정보가 없습니다.'))+'</section>';
 const dateSort = (a,b) => (b.date || b.published || '').localeCompare(a.date || a.published || '');
+const feeLabel = event => /^\d{1,12}$/.test(event?.fee ?? '') ? new Intl.NumberFormat('ko-KR').format(Number(event.fee))+'원' : '';
+const feeNote = event => feeLabel(event) ? ' <small class="lecture-fee">('+esc(feeLabel(event))+')</small>' : '';
 function records(items, kind, preview=false) {
   if(!items.length) return empty(kind==='event'?'등록된 강의 이력이 없습니다.':'평가 이력 없음');
-  return items.map(e=>'<div class="record"><div class="sectionhead"><strong>'+esc(e.title)+'</strong>'+
+  return items.map(e=>'<div class="record"><div class="sectionhead"><strong>'+esc(e.title)+'</strong>'+(kind==='event'?feeNote(e):'')+
     (preview?'':'<button data-action="'+kind+'" data-id="'+esc(e.id)+'">수정</button>')+'</div><p>'+
     esc(kind==='event'?[e.date||'일자 미확인',e.place||'장소 미확인',e.host,e.status,e.published && '후기 게시 '+e.published].filter(Boolean).join(' · '):'평가일 '+(e.date||'미확인')+' · '+gradeOf(e)+'등급')+'</p>'+
-    (kind==='event'?link(e.source,'강의 출처 ↗'):(e.note?'<p>'+esc(e.note)+'</p>':''))+'</div>').join('');
+    (kind==='event'?(!preview&&e.contact?'<p>섭외 연락처 · '+esc(e.contact)+'</p>':'')+link(e.source,'강의 출처 ↗'):(e.note?'<p>'+esc(e.note)+'</p>':''))+'</div>').join('');
 }
 function evaluationGroups(reviews) {
   const groups = new Map();
@@ -111,7 +113,7 @@ function evaluationSummary(events,reviews) {
   return '<div class="profile-rating"><span>강사 평가</span>'+
     '<button type="button" data-tab="2" class="rating-value">'+esc(rating)+'</button>'+
     (recentReview?'<small>최근 평가 강의 · '+esc(recentReview.title)+'</small>':'')+
-    '<div class="recent-program"><small>최근 강의 · '+esc(latest?.date || '날짜 미확인')+'</small><small>'+esc(latest?.title || '등록된 강의 프로그램 없음')+'</small></div></div>';
+    '<div class="recent-program"><small>최근 강의 · '+esc(latest?.date || '날짜 미확인')+'</small><small>'+esc(latest?.title || '등록된 강의 프로그램 없음')+feeNote(latest)+'</small></div></div>';
 }
 const todayKorea = () => new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
 function drawDetail() {
@@ -159,13 +161,14 @@ $('detail').addEventListener('click',e=>{
 });
 const forms = {
   person:[['name','이름','text',1],['role','소속·직함','text',1],['year','출생연도','year'],['yearSource','출생연도 출처 URL','url'],['category','분야 (여러 분야는 쉼표로 구분)','text'],['photo','사진 URL','url'],['source','프로필 출처 URL','url'],['career','주요 이력 (한 줄에 한 건)','textarea'],['topics','강의 주제 (한 줄에 한 건)','textarea']],
-  event:[['title','강의 주제','text',1],['date','강의 날짜','date'],['place','강의 장소','text'],['host','주최 기관','text'],['status','확인 상태','text'],['published','후기 게시일','date'],['source','출처 URL','url']],
+  event:[['title','강의 주제','text',1],['date','강의 날짜','date'],['place','강의 장소','text'],['host','주최 기관','text'],['fee','강의료 (원, 선택)','fee'],['contact','섭외 연락처 (선택)','text'],['status','확인 상태','text'],['published','후기 게시일','date'],['source','출처 URL','url']],
   review:[['title','강의 주제','text',1],['lectureDate','강의 날짜','date',1],['date','평가 날짜','date',1],['grade','평가 등급','grade',1],['note','평가 의견','textarea']]
 };
 function field([name,label,type,required],data,events) {
   const value=Array.isArray(data[name])?data[name].join('\n'):(data[name]??'');
   const attr=' name="'+name+'" '+(required?'required':'');
   let control='<input'+attr+' type="'+(type==='year'?'text':type)+'" '+(type==='year'?'inputmode="numeric" pattern="[0-9]{4}"':'')+' value="'+esc(value)+'">';
+  if(type==='fee') control='<input'+attr+' type="text" inputmode="numeric" maxlength="16" placeholder="예: 500,000" value="'+esc(value)+'">';
   if(type==='textarea') control='<textarea'+attr+'>'+esc(value)+'</textarea>';
   if(type==='grade') control='<select'+attr+'><option value="">등급 선택</option>'+grades.map(g=>'<option '+(g===value?'selected':'')+'>'+g+'</option>').join('')+'</select>';
   if(events?.length && name==='title') control='<input'+attr+' list="event-titles" value="'+esc(value)+'"><datalist id="event-titles">'+events.map(e=>'<option value="'+esc(e.title)+'">').join('')+'</datalist>';
@@ -209,6 +212,11 @@ $('editor').addEventListener('submit',e=>{
   if(Object.keys(data).filter(k=>['photo','source','yearSource'].includes(k)).some(k=>data[k]&&!url(data[k])))return err('웹 주소는 https:// 또는 http://로 입력하세요.');
   if(kind==='review' && (!grades.includes(data.grade) || !data.lectureDate || data.lectureDate>data.date))
     return err('평가 등급과 강의 날짜를 확인하세요. 평가 날짜는 강의 날짜 이후여야 합니다.');
+  if(kind==='event'){
+    if(data.fee && !/^(?:[0-9]{1,12}|[0-9]{1,3}(?:,[0-9]{3}){1,3})$/.test(data.fee))
+      return err('강의료는 원 단위 숫자로 입력하세요. 예: 500,000');
+    data.fee=data.fee ? String(Number(data.fee.replaceAll(',',''))) : '';
+  }
   let next;
   if(kind==='person'){
     if(!data.name||!data.role) return err('이름과 소속·직함을 입력하세요.');

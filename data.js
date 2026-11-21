@@ -7224,5 +7224,220 @@ window.SPEAKERS = [
     "events": [],
     "reviews": [],
     "sources": []
+  },
+  {
+    "id": "public-3d7209e972ac958a",
+    "name": "김기진",
+    "role": "한국HR포럼 대표",
+    "year": "",
+    "photo": "",
+    "source": "https://hooh.kr/sub/teacher/view.asp?m_idx=18941",
+    "category": "인사·노무, AI·IT, 조직문화",
+    "topics": [
+      "HR 전략에 생성형 AI 적용",
+      "프롬프트 작성과 질문 설계"
+    ],
+    "career": [
+      "한국HR협회 대표",
+      "한국경제신문 HR 칼럼니스트"
+    ],
+    "events": [],
+    "reviews": [],
+    "sources": []
+  },
+  {
+    "id": "public-9ae5717953a9f0cd",
+    "name": "박기삼",
+    "role": "뜨거운AI 대표",
+    "year": "",
+    "photo": "",
+    "source": "https://hooh.kr/sub/teacher/view.asp?m_idx=24952",
+    "category": "AI·IT, 교육, 디지털 마케팅",
+    "topics": [
+      "ChatGPT와 Copilot 업무 활용",
+      "생성형 AI로 보고서·콘텐츠 만들기",
+      "디지털 전환과 AI 리더십"
+    ],
+    "career": [
+      "전 테스트웍스 홍보·마케팅 매니저"
+    ],
+    "events": [
+      {
+        "title": "ChatGPT로 업무 생산성 높이기",
+        "host": "휴넷",
+        "date": "",
+        "place": "",
+        "status": "출강 이력 확인",
+        "source": "https://hooh.kr/sub/teacher/view.asp?m_idx=24952",
+        "id": "event-4ad45bf0627d6de2"
+      },
+      {
+        "title": "생성형 AI를 활용한 의료기기 마케팅",
+        "host": "한국보건복지인재원",
+        "date": "",
+        "place": "",
+        "status": "출강 이력 확인",
+        "source": "https://hooh.kr/sub/teacher/view.asp?m_idx=24952",
+        "id": "event-4c7abec3b9573e70"
+      },
+      {
+        "title": "팀장 대상 생성형 AI 업무활용",
+        "host": "산업은행",
+        "date": "",
+        "place": "",
+        "status": "출강 이력 확인",
+        "source": "https://hooh.kr/sub/teacher/view.asp?m_idx=24952",
+        "id": "event-41b29bbe341d0995"
+      }
+    ],
+    "reviews": [],
+    "sources": []
+  },
+  {
+    "id": "public-271525c50d7dc171",
+    "name": "안재윤",
+    "role": "코어컨설팅 대표",
+    "year": "",
+    "photo": "",
+    "source": "https://hooh.kr/sub/teacher/view.asp?m_idx=33562",
+    "category": "AI·IT, 경영, ESG",
+    "topics": [
+      "ChatGPT 기반 업무 자동화",
+      "중소기업 디지털 전환",
+      "AI 활용 전략기획"
+    ],
+    "career": [
+      "제조 브랜드 디지털 전환 프로젝트 수행",
+      "전 우리은행 과장"
+    ],
+    "events": [],
+    "reviews": [],
+    "sources": []
+  },
+  {
+    "id": "public-fa578b1f7d9254b5",
+    "name": "양회창",
+    "role": "장안대학교 유통경영과 교수",
+    "year": "",
+    "photo": "",
+    "source": "https://hooh.kr/sub/teacher/view.asp?m_idx=41543",
+    "category": "AI·IT, 리더십, 디지털 마케팅",
+    "topics": [
+      "AI 기반 경영혁신",
+      "AI 시나리오 기획",
+      "유통·마케팅 전략과 리더십"
+    ],
+    "career": [
+      "아주대학교 경영학 박사",
+      "국제융합경영학회 회장"
+    ],
+    "events": [],
+    "reviews": [],
+    "sources": []
+  },
+  {
+    "id": "public-be1440c226361204",
+    "name": "유병준",
+    "role": "서울대학교 경영대학 교수",
+    "year": "",
+    "photo": "",
+    "source": "https://www.hooh.kr/sub/teacher/view.asp?m_idx=30390",
+    "category": "AI·IT, 경영, 디지털 마케팅",
+    "topics": [
+      "기업의 AI 적용 전략",
+      "디지털 전환 사례",
+      "전자상거래와 비즈니스 모델"
+    ],
+    "career": [
+      "카네기멜론대학교 경영학 박사",
+      "서울대학교 AI 최고경영자과정 주임교수"
+    ],
+    "events": [],
+    "reviews": [],
+    "sources": []
+  },
+  {
+    "id": "public-4f72813cfe4b8c90",
+    "name": "윤수환",
+    "role": "인사이드 리더십 대표",
+    "year": "",
+    "photo": "",
+    "source": "https://hooh.kr/sub/teacher/view.asp?m_idx=843",
+    "category": "리더십, 조직문화, 소통, 코칭",
+    "topics": [
+      "팀 코칭과 협업 리더십",
+      "목표 및 성과관리",
+      "피드백과 평가면담"
+    ],
+    "career": [
+      "한국리더십센터 교육기획팀 근무",
+      "전 신한은행 영업팀"
+    ],
+    "events": [],
+    "reviews": [],
+    "sources": []
+  },
+  {
+    "id": "public-7e0a5792d38d301e",
+    "name": "미키김(김현유)",
+    "role": "액트투벤처스 대표",
+    "year": "",
+    "photo": "",
+    "source": "https://hooh.kr/sub/teacher/view.asp?m_idx=1101",
+    "category": "리더십, AI·IT, 자기계발",
+    "topics": [
+      "직장인의 일하는 방식과 커리어 관리",
+      "실리콘밸리 기업문화",
+      "기업가정신과 미래 트렌드"
+    ],
+    "career": [
+      "전 구글 아시아태평양 사업개발 총괄",
+      "UC 버클리 하스 경영대학원 MBA"
+    ],
+    "events": [],
+    "reviews": [],
+    "sources": []
+  },
+  {
+    "id": "public-9249b4c2836c0c5c",
+    "name": "구기욱",
+    "role": "쿠퍼실리테이션그룹 대표",
+    "year": "",
+    "photo": "",
+    "source": "https://hooh.kr/sub/teacher/view.asp?m_idx=17822",
+    "category": "조직문화, 리더십, 소통",
+    "topics": [
+      "조직개발과 참여형 리더십",
+      "퍼실리테이션과 집단 의사결정",
+      "협업과 조직문화"
+    ],
+    "career": [
+      "글로벌조직개발협회 회장",
+      "한국퍼실리테이터협회 연구위원장"
+    ],
+    "events": [],
+    "reviews": [],
+    "sources": []
+  },
+  {
+    "id": "public-3a51984485f35de9",
+    "name": "홍의숙",
+    "role": "인코칭 회장",
+    "year": "",
+    "photo": "",
+    "source": "https://hooh.kr/sub/teacher/view.asp?m_idx=390",
+    "category": "리더십, 조직문화, 소통, 코칭",
+    "topics": [
+      "팀장 코칭과 조직문화",
+      "여성 리더십",
+      "신뢰 기반 조직 소통"
+    ],
+    "career": [
+      "대한리더십학회 상임이사",
+      "숭실대학교 벤처중소기업학 박사"
+    ],
+    "events": [],
+    "reviews": [],
+    "sources": []
   }
 ];
