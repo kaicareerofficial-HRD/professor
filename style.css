@@ -27,3 +27,13 @@ main{max-width:1368px;margin:auto;padding:26px 24px}.intro{display:flex;justify-
 #topic-results>.topic-category>summary strong{overflow-wrap:anywhere}
 #topic-results>.topic-category>summary small{grid-column:1;margin:0}
 @media(max-width:520px){#topic-results:has(>.topic-category){grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#topic-results>.topic-category>summary{min-height:76px;padding:10px;gap:3px 6px}}
+
+#topic-results>.topic-category>summary{min-height:112px}
+#topic-results>.topic-category>summary::after{grid-row:1/4}
+#topic-results>.topic-category>summary .card-meter{grid-column:1;margin-top:4px}
+.topic-metrics{display:block;color:var(--muted);font-size:12px;font-weight:500}
+.topic-metrics b{font-weight:750;color:var(--navy)}
+.card-meter{display:block;height:5px;border-radius:999px;background:#e6eef3;overflow:hidden}
+.card-meter>span{display:block;height:100%;border-radius:inherit;background:#178078}
+.topic-card .topic-metrics{margin:8px 0 6px}.topic-card .event-meter>span{background:#486d9c}
+@media(max-width:520px){#topic-results>.topic-category>summary{min-height:94px}.topic-metrics{line-height:1.45}}
