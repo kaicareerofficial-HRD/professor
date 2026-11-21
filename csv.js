@@ -3,7 +3,7 @@
 const csvColumns = [
   ['id','강사 ID'],['name','이름'],['role','소속·직함'],['year','출생연도'],
   ['category','분야'],['photo','사진 URL'],['source','프로필 출처 URL'],
-  ['yearSource','출생연도 출처 URL'],['career','주요 이력'],['topics','강의 주제']
+  ['yearSource','출생연도 출처 URL'],['career','주요 이력'],['topics','강의 주제'],['books','저서']
 ];
 const csvFormula = /^[\s\uFEFF]*[=+@-]|^[\t\r\n]|^'/u;
 function csvCell(value) {
@@ -66,12 +66,12 @@ function csvDrafts(text, existing) {
     if(drafts.has(id))fail('같은 강사가 파일에 두 번 포함되었습니다.');
     delete fields.id;
     if('category' in fields)fields.category=categoryList(fields).join(', ');
-    for(const field of ['career','topics'])if(field in fields)fields[field]=fields[field].split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    for(const field of ['career','topics','books'])if(field in fields)fields[field]=fields[field].split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
     if(previous?.photo.startsWith('data:') && fields.photo==='')delete fields.photo;
     const next={role:'',category:'',year:'',photo:'',source:'',career:[],topics:[],events:[],reviews:[],...previous,...fields,id};
     if(!previous)added++;
     byId.set(id,next);
-    const isUnchanged=previous && Object.keys(fields).every(k=>JSON.stringify(previous[k] ?? '')===JSON.stringify(next[k]));
+    const isUnchanged=previous && Object.keys(fields).every(k=>JSON.stringify(previous[k] ?? (k==='books'?[]:''))===JSON.stringify(next[k]));
     drafts.set(id,isUnchanged?null:next);
   }
   return {rows:[...drafts.values()].filter(Boolean),added};

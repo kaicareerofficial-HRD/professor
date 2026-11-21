@@ -128,11 +128,11 @@ function fillRecognized(text,fields) {
   const year=text.match(/(?:출생(?:연도)?|생년월일)\s*[:：]?\s*((?:19|20)\d{2})/)?.[1];
   for(const [key,value] of Object.entries({name,role,year})) if(value && !form[key].value.trim())form[key].value=value.trim();
   let section='career';
-  const output={career:[],topics:[]};
+  const output={career:[],topics:[],books:[]};
   for(const line of entries){
     if(/^(?:성명|이름|강사명|소속|직함|출생(?:연도)?|생년월일)\s*[:：]/.test(line))continue;
-    const heading=line.match(/^(주요\s*이력|경력|학력|강의\s*(?:내용|주제)|강연\s*(?:내용|주제))\s*[:：]?\s*(.*)$/);
-    if(heading){section=/^강/.test(heading[1])?'topics':'career';if(heading[2])output[section].push(heading[2]);}
+    const heading=line.match(/^(주요\s*이력|경력|학력|(?:주요\s*)?저서|저술|강의\s*(?:내용|주제)|강연\s*(?:내용|주제))\s*[:：]?\s*(.*)$/);
+    if(heading){section=/^강/.test(heading[1])?'topics':/저서|저술/.test(heading[1])?'books':'career';if(heading[2])output[section].push(heading[2]);}
     else output[section].push(line);
   }
   for(const key of Object.keys(output)){

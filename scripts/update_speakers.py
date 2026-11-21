@@ -73,8 +73,9 @@ def apply(rows, updates):
         else:
             counts["merged"] += 1
         row["category"] = ", ".join(unique([v.strip() for v in fields(row["category"])+fields(update.get("category",""))]))
-        for field in ("topics","career"):
-            row[field] = unique(row[field]+update.get(field,[]))
+        for field in ("topics","career","books"):
+            if field in update:
+                row[field] = unique(row.get(field,[])+update[field])
         if good_url(update.get("photo","")) and not row["photo"]:
             row["photo"] = update["photo"]
         refs = list(row.get("sources",[]))

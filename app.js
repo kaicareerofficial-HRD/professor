@@ -31,14 +31,18 @@ function strings(row, keys) { return keys.every(key => typeof row[key] === 'stri
 function valid(rows) {
   return Array.isArray(rows) && new Set(rows.map(r=>r?.id)).size === rows.length && rows.every(r =>
     r && strings(r,['id','name','role','category','year','photo','source']) && r.id && r.name.trim() &&
-    ['topics','career'].every(k=>Array.isArray(r[k]) && r[k].every(x=>typeof x==='string')) &&
+    ['topics','career','books'].every(k=>(k==='books' && r[k]===undefined) || (Array.isArray(r[k]) && r[k].every(x=>typeof x==='string'))) &&
     Array.isArray(r.events) && Array.isArray(r.reviews) &&
     r.events.every(e=>e && strings(e,['id','date','title','place','host','source'])) &&
     r.reviews.every(e=>e && strings(e,['id','date','title','note']) && grades.includes(gradeOf(e)) && (e.lectureDate===undefined || typeof e.lectureDate==='string')));
 }
 let changed = [];
 try { const local = migrateReviews(JSON.parse(localStorage.getItem(KEY))); if(valid(local)) changed = local; } catch {}
-const all = () => sorted([...new Map([...seed,...changed].map(row=>[row.id,row])).values()]);
+const seedById = new Map(seed.map(row=>[row.id,row]));
+const all = () => sorted([...new Map([...seedById,...changed.map(row=>{
+  const base=seedById.get(row.id);
+  return [row.id,row.books===undefined && base?.books?{...row,books:base.books}:row];
+})]).values()]);
 let selected = seed.find(r=>r.name==='김경일')?.id || all()[0]?.id;
 let tab = 0, active = -1, matches = [], editor = null, toastTimer;
 const search = $('search');
@@ -58,7 +62,7 @@ function categories() {
 function filtered() {
   const category = $('category').value, terms = search.value.trim().split(/\s+/).map(normalize);
   return all().filter(x=>(!category || categoryList(x).includes(category)) && terms.every(term =>
-    normalize([x.name,x.role,x.year,x.category,...x.topics,...x.career,...x.events.map(e=>e.title+' '+e.place+' '+e.host)].join(' ')).includes(term)));
+    normalize([x.name,x.role,x.year,x.category,...x.topics,...x.career,...(x.books||[]),...x.events.map(e=>e.title+' '+e.place+' '+e.host)].join(' ')).includes(term)));
 }
 function personText(x) { return '<strong>'+esc(x.name)+'</strong><small>'+esc([x.role,x.year && x.year+'년생'].filter(Boolean).join(' · ')||'소속 미입력')+'</small>'; }
 function drawList() {
@@ -80,6 +84,11 @@ function choose(id) {
 }
 const empty = message => '<p class="empty">'+esc(message)+'</p>';
 const box = (title,items) => '<section class="box"><h3>'+title+'</h3>'+(items.length?'<ul>'+items.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':empty('등록된 정보가 없습니다.'))+'</section>';
+function bookSection(books) {
+  if(books.length<=5)return box('저서',books);
+  return '<section class="box" aria-label="저서"><details><summary>저서 '+books.length+'권 보기</summary>'+
+    '<ul>'+books.map(book=>'<li>'+esc(book)+'</li>').join('')+'</ul></details></section>';
+}
 const dateSort = (a,b) => (b.date || b.published || '').localeCompare(a.date || a.published || '');
 const feeLabel = event => /^\d{1,12}$/.test(event?.fee ?? '') ? new Intl.NumberFormat('ko-KR').format(Number(event.fee))+'원' : '';
 const feeNote = event => feeLabel(event) ? ' <small class="lecture-fee">('+esc(feeLabel(event))+')</small>' : '';
@@ -120,7 +129,7 @@ function drawDetail() {
   const x=all().find(r=>r.id===selected);
   if(!x) { $('detail').innerHTML=empty('강사를 선택하거나 새로 등록하세요.'); return; }
   const events=[...x.events].sort(dateSort), reviews=[...x.reviews].sort(dateSort);
-  const overview='<div class="overview">'+box('주요 이력',x.career)+box('강의 주제',x.topics)+'</div><section><div class="sectionhead"><h3>최근 강의 이력</h3><button data-tab="1">전체 이력 보기</button></div><div style="margin-top:9px">'+records(events.slice(0,3),'event',true)+'</div></section>'+
+  const overview='<div class="overview">'+box('주요 이력',x.career)+box('강의 주제',x.topics)+bookSection(x.books||[])+'</div><section><div class="sectionhead"><h3>최근 강의 이력</h3><button data-tab="1">전체 이력 보기</button></div><div style="margin-top:9px">'+records(events.slice(0,3),'event',true)+'</div></section>'+
     ('<div class="source">'+[link(x.source,'공개 프로필 출처 ↗'),link(x.yearSource,'출생연도 출처 ↗'),
       ...(Array.isArray(x.sources)?x.sources.map(s=>s&&link(s.url,s.label)):[])].filter(Boolean).join(' · ')+'</div>');
   const history='<div class="sectionhead"><h3>강의 이력 '+events.length+'건</h3><button data-action="event">＋ 이력 등록</button></div><div>'+records(events,'event')+'</div>';
@@ -160,7 +169,7 @@ $('detail').addEventListener('click',e=>{
   if(action) openForm(action.dataset.action,all().find(r=>r.id===selected),action.dataset.id);
 });
 const forms = {
-  person:[['name','이름','text',1],['role','소속·직함','text',1],['year','출생연도','year'],['yearSource','출생연도 출처 URL','url'],['category','분야 (여러 분야는 쉼표로 구분)','text'],['photo','사진 URL','url'],['source','프로필 출처 URL','url'],['career','주요 이력 (한 줄에 한 건)','textarea'],['topics','강의 주제 (한 줄에 한 건)','textarea']],
+  person:[['name','이름','text',1],['role','소속·직함','text',1],['year','출생연도','year'],['yearSource','출생연도 출처 URL','url'],['category','분야 (여러 분야는 쉼표로 구분)','text'],['photo','사진 URL','url'],['source','프로필 출처 URL','url'],['career','주요 이력 (한 줄에 한 건)','textarea'],['topics','강의 주제 (한 줄에 한 건)','textarea'],['books','저서 (한 줄에 한 권)','textarea']],
   event:[['title','강의 주제','text',1],['date','강의 날짜','date'],['place','강의 장소','text'],['host','주최 기관','text'],['fee','강의료 (원, 선택)','fee'],['contact','섭외 연락처 (선택)','text'],['status','확인 상태','text'],['published','후기 게시일','date'],['source','출처 URL','url']],
   review:[['title','강의 주제','text',1],['lectureDate','강의 날짜','date',1],['date','평가 날짜','date',1],['grade','평가 등급','grade',1],['note','평가 의견','textarea']]
 };
@@ -225,7 +234,7 @@ $('editor').addEventListener('submit',e=>{
     if(duplicate)return err('같은 이름과 소속·직함의 강사가 있습니다. 기존 프로필을 확인하세요.');
     data.category=categoryList(data).join(', ');
     next={events:[],reviews:[],...row,...data,photo:data.photo||editor.photo,id:row?.id||uid()};
-    for(const k of ['career','topics']) next[k]=data[k].split('\n').map(s=>s.trim()).filter(Boolean);
+    for(const k of ['career','topics','books']) next[k]=data[k].split('\n').map(s=>s.trim()).filter(Boolean);
   } else {
     const key=kind==='event'?'events':'reviews';
     const entry={id:id||uid(),...data};
