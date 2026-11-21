@@ -426,15 +426,17 @@ directoryIntro.insertAdjacentHTML('beforebegin',
     '<button type="button" id="topic-nav">주제별 강의 현황</button><button type="button" id="directory-nav">강사 찾기</button></nav>'+
   '<section id="topic-home" aria-label="강의 뉴스와 주제별 현황">'+
     '<section id="lecture-news" aria-labelledby="lecture-news-title" class="box" style="margin-bottom:18px">'+
-      '<h1 id="lecture-news-title">오늘의 강의 뉴스</h1><p id="lecture-news-date" style="margin:8px 0"></p>'+
-      '<div id="lecture-news-items" class="overview"></div></section>'+
+      '<div class="sectionhead"><h1 id="lecture-news-title">오늘의 강의 뉴스</h1>'+
+      '<button type="button" id="news-pause" aria-pressed="false">흐름 멈춤</button></div><p id="lecture-news-date"></p>'+
+      '<div id="lecture-news-items"></div></section>'+
     '<section class="intro"><div><h2>주제별 강의 현황</h2><p>주제를 선택하면 강사별 프로필과 등록된 강의 이력을 볼 수 있습니다.</p></div>'+
     '<button type="button" class="primary" id="topic-add">＋ 강사 등록</button></section>'+
     '<div class="box" id="topic-filter"><label for="topic-search">강의 주제 검색</label>'+
       '<input id="topic-search" type="search" placeholder="예: 리더십, 조직문화, 생성형 AI" style="margin:8px 0">'+
       '<p id="topic-count" aria-live="polite"></p></div>'+
     '<div id="topic-results" style="margin:14px 0"></div></section>');
-let activeTopic='',topicLimit=24;
+let activeTopic='',activeTopicCategory='';
+const topicLimits=new Map();
 function showTopicView(home) {
   $('topic-home').hidden=!home;
   directoryIntro.hidden=home;
@@ -454,14 +456,45 @@ function drawLectureNews(speakers) {
     if(first!==second)return first?-1:1;
     return (first?a.date.localeCompare(b.date):b.date.localeCompare(a.date)) || (a.time||'').localeCompare(b.time||'');
   });
-  $('lecture-news-items').innerHTML=ordered.length?ordered.slice(0,8).map(item=>{
+  const entries=ordered.slice(0,12);
+  const ticker=$('lecture-news-items');
+  const pause=$('news-pause');
+  pause.hidden=entries.length===0 || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const headline=item=>{
     const speaker=speakers.find(s=>normalize(s.name)===normalize(item.speaker) && s.events.some(e=>newsLectureMatch(e,item)));
-    const metadata=[item.date,item.time,item.place,item.host].filter(Boolean).map(esc).join(' · ');
-    return '<article class="record"><p><strong>'+esc(item.speaker)+'</strong> · '+esc(item.status||'행사 공지')+'</p>'+
-      '<h3>'+esc(item.title)+'</h3><p>'+metadata+'</p>'+link(item.source,'출처 보기 ↗')+
-      (speaker?' <button type="button" data-person="'+esc(speaker.id)+'">강사 프로필</button>':'')+'</article>';
+    const metadata=[item.date,item.time,item.place,item.status].filter(Boolean).map(esc).join(' · ');
+    return '<span class="news-headline"><small>'+metadata+'</small> '+
+      link(item.source,item.speaker+' · '+item.title)+
+      (speaker?' <button type="button" data-person="'+esc(speaker.id)+'" aria-label="'+esc(item.speaker)+' 프로필">프로필</button>':'')+'</span>';
+  };
+  const rows=[entries.filter((_,index)=>index%2===0),entries.filter((_,index)=>index%2===1)];
+  ticker.innerHTML=entries.length?rows.filter(row=>row.length).map((row,index)=>{
+    const headlines=row.map(headline).join('');
+    return '<div class="news-strip" role="group" aria-label="강의 뉴스 '+(index+1)+'줄">'+
+      '<div class="news-track"><div class="news-line">'+headlines+'</div>'+
+      '<div class="news-line news-copy" aria-hidden="true" inert>'+headlines+'</div></div></div>';
   }).join(''):empty('최근 확인된 강의 뉴스가 없습니다.');
 }
+$('news-pause').onclick=()=>{
+  const button=$('news-pause');
+  const paused=button.getAttribute('aria-pressed')!=='true';
+  button.setAttribute('aria-pressed',String(paused));
+  button.textContent=paused?'흐름 재생':'흐름 멈춤';
+  $('lecture-news-items').classList.toggle('news-paused',paused);
+};
+
+function categorizeTopics(topics) {
+  const groups=new Map();
+  for(const [key,topic] of topics){
+    const fields=new Set([...topic.speakers.values()].flatMap(({speaker})=>categoryList(speaker)));
+    for(const field of fields.size?fields:['미분류']){
+      if(!groups.has(field))groups.set(field,[]);
+      groups.get(field).push([key,topic]);
+    }
+  }
+  return [...groups].sort((a,b)=>a[0]==='미분류'?1:b[0]==='미분류'?-1:a[0].localeCompare(b[0],'ko'));
+}
+
 function drawTopics() {
   const speakers=all();
   const topics=groupTopics(speakers);
@@ -482,34 +515,52 @@ function drawTopics() {
       '<div class="overview">'+speakerCards.join('')+'</div>';
     return;
   }
-  const terms=$('topic-search').value.trim().split(/\s+/).map(normalize);
-  const found=[...topics].filter(([key])=>terms.every(term=>key.includes(term))).sort((a,b)=>
-    b[1].eventCount-a[1].eventCount || b[1].speakers.size-a[1].speakers.size || a[1].title.localeCompare(b[1].title,'ko'));
-  $('topic-count').textContent='주제 '+found.length+'개 / 전체 '+topics.size+'개';
-  result.innerHTML=found.length?'<div class="overview">'+found.slice(0,topicLimit).map(([key,topic])=>
-    '<button class="box" style="text-align:left;overflow-wrap:anywhere" type="button" data-topic-key="'+esc(key)+'">'+
-    '<strong>'+esc(topic.title)+'</strong><br><small>강사 '+topic.speakers.size+'명 · 강의 이력 '+topic.eventCount+'건</small></button>').join('')+'</div>'+
-    (found.length>topicLimit?'<button type="button" id="topic-more" style="margin-top:12px">주제 더 보기</button>':''):
-    empty('검색 조건에 맞는 강의 주제가 없습니다.');
+  const terms=$('topic-search').value.trim().split(/\s+/).map(normalize).filter(Boolean);
+  const groups=categorizeTopics(topics);
+  const openFields=new Set([...result.querySelectorAll('details[open]')].map(group=>group.dataset.topicCategory));
+  if(activeTopicCategory)openFields.add(activeTopicCategory);
+  const matchedTopics=new Set();
+  const grouped=groups.flatMap(([field,items])=>{
+    const matches=items.filter(([key])=>terms.every(term=>key.includes(term)||normalize(field).includes(term)));
+    if(!matches.length)return [];
+    matches.forEach(([key])=>matchedTopics.add(key));
+    matches.sort((a,b)=>b[1].eventCount-a[1].eventCount || b[1].speakers.size-a[1].speakers.size || a[1].title.localeCompare(b[1].title,'ko'));
+    return [{field,matches}];
+  });
+  $('topic-count').textContent='분야 '+grouped.length+'개 · 주제 '+matchedTopics.size+'개 / 전체 '+topics.size+'개';
+  result.innerHTML=grouped.length?grouped.map(({field,matches})=>{
+    const limit=topicLimits.get(field)||12;
+    const cards=matches.slice(0,limit).map(([key,topic])=>
+      '<button class="box topic-card" type="button" data-topic-key="'+esc(key)+'"><strong>'+esc(topic.title)+
+      '</strong><br><small>강사 '+topic.speakers.size+'명 · 강의 이력 '+topic.eventCount+'건</small></button>').join('');
+    return '<details class="box topic-category" data-topic-category="'+esc(field)+'"'+(terms.length||openFields.has(field)?' open':'')+'>'+
+      '<summary><strong>'+esc(field)+'</strong> <small>주제 '+matches.length+'개</small></summary><div class="overview">'+cards+'</div>'+
+      (matches.length>limit?'<button type="button" data-topic-more>이 분야 주제 더 보기</button>':'')+'</details>';
+  }).join(''):empty('검색 조건에 맞는 강의 주제가 없습니다.');
 }
 $('topic-nav').onclick=()=>{activeTopic='';showTopicView(true);};
 $('directory-nav').onclick=()=>showTopicView(false);
 $('topic-add').onclick=()=>$('add').click();
-$('topic-search').addEventListener('input',()=>{topicLimit=24;drawTopics();});
+$('topic-search').addEventListener('input',()=>{topicLimits.clear();drawTopics();});
 $('topic-results').addEventListener('click',event=>{
   const button=event.target.closest('button');
   if(!button)return;
   if(button.hasAttribute('data-topic-key')){
+    activeTopicCategory=button.closest('[data-topic-category]').dataset.topicCategory;
     activeTopic=button.dataset.topicKey;
     drawTopics();
     $('topic-title').focus();
   }else if(button.id==='topic-back'){
+    const previous=activeTopic;
     activeTopic='';drawTopics();
-    $('topic-search').focus();
-  }else if(button.id==='topic-more'){
-    const previous=topicLimit;
-    topicLimit+=24;drawTopics();
-    $('topic-results').querySelectorAll('[data-topic-key]')[previous]?.focus();
+    const group=[...$('topic-results').querySelectorAll('[data-topic-category]')].find(el=>el.dataset.topicCategory===activeTopicCategory);
+    ([...(group?.querySelectorAll('[data-topic-key]')||[])].find(el=>el.dataset.topicKey===previous)||$('topic-search')).focus();
+  }else if(button.hasAttribute('data-topic-more')){
+    const field=button.closest('[data-topic-category]').dataset.topicCategory;
+    const limit=topicLimits.get(field)||12;
+    topicLimits.set(field,limit+12);drawTopics();
+    const group=[...$('topic-results').querySelectorAll('[data-topic-category]')].find(el=>el.dataset.topicCategory===field);
+    group?.querySelectorAll('[data-topic-key]')[limit]?.focus();
   }
 });
 showTopicView(true);
