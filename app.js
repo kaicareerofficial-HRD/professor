@@ -68,8 +68,7 @@ function mergeLectureNews(profiles,items) {
     const event={id:'public-news-'+item.id,title:item.title,date:item.date,time:item.time||'',place:item.place||'',
       host:item.host||'',status:item.status||'행사 공지',source:item.source};
     const previous=speaker.events.find(e=>newsLectureMatch(e,item));
-    const events=previous ? speaker.events.map(e=>e===previous ?
-      (e.id===event.id ? {...e,...event,source:e.source||event.source} : e) : e) : [...speaker.events,event];
+    const events=previous?speaker.events:[...speaker.events,event];
     byId.set(speaker.id,{...speaker,events});
     if(!id)byName.set(name,[speaker.id]);
   }
@@ -375,7 +374,7 @@ editForm.addEventListener('submit',e=>{
     for(const key of listKeys)next[key]=profileListValues($('fields').querySelector('[data-profile-list="'+key+'"]'));
   } else {
     const key=kind==='event'?'events':'reviews';
-    const entry={id:id||uid(),...data};
+    const entry={...row[key].find(record=>record.id===id),id:id||uid(),...data};
     next={...row,[key]:id?row[key].map(x=>x.id===id?entry:x):[...row[key],entry]};
   }
   try{save(next);}catch{return err('브라우저에 저장할 수 없습니다. 저장 공간과 권한을 확인하세요.');}
