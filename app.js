@@ -83,11 +83,33 @@ function choose(id) {
   if(matchMedia('(max-width:650px)').matches) $('detail').scrollIntoView({block:'start'});
 }
 const empty = message => '<p class="empty">'+esc(message)+'</p>';
-const box = (title,items) => '<section class="box"><h3>'+title+'</h3>'+(items.length?'<ul>'+items.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':empty('등록된 정보가 없습니다.'))+'</section>';
-function bookSection(books) {
-  if(books.length<=5)return box('저서',books);
-  return '<section class="box" aria-label="저서"><details><summary>저서 '+books.length+'권 보기</summary>'+
-    '<ul>'+books.map(book=>'<li>'+esc(book)+'</li>').join('')+'</ul></details></section>';
+const profileLists = {career:'주요 이력',topics:'강의 주제',books:'저서'};
+const listKeys = Object.keys(profileLists);
+function profileList(key,items) {
+  const title=profileLists[key];
+  const list=items.length?'<ul>'+items.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':empty('등록된 정보가 없습니다.');
+  const content=key==='books'&&items.length>5?'<details><summary>'+items.length+'권 보기</summary>'+list+'</details>':list;
+  return '<section class="box"><div class="sectionhead"><h3>'+title+'</h3>'+
+    '<button type="button" data-action="person" data-section="'+key+'">'+title+' 수정</button></div>'+content+'</section>';
+}
+function listRow(label,value='') {
+  return '<div class="profile-edit-row"><input type="text" aria-label="'+esc(label)+' 항목" value="'+esc(value)+'">'+
+    '<button type="button" data-remove-row aria-label="'+esc(label)+' 항목 삭제">삭제</button></div>';
+}
+function listEditor(key,items) {
+  const label=profileLists[key];
+  return '<fieldset class="profile-edit-list" data-profile-list="'+key+'"><legend>'+label+'</legend>'+
+    '<div data-profile-rows>'+((items?.length?items:['']).map(item=>listRow(label,item)).join(''))+'</div>'+
+    '<button type="button" data-add-row>'+label+' 추가</button></fieldset>';
+}
+function profileListValues(group) {
+  return [...group.querySelectorAll('input')].map(input=>input.value.trim()).filter(Boolean);
+}
+function appendProfileListValues(fields,key,values) {
+  const group=fields.querySelector('[data-profile-list="'+key+'"]');
+  if(!group || !values.length)return;
+  const items=[...new Set([...profileListValues(group),...values])];
+  group.querySelector('[data-profile-rows]').innerHTML=items.map(item=>listRow(profileLists[key],item)).join('');
 }
 const dateSort = (a,b) => (b.date || b.published || '').localeCompare(a.date || a.published || '');
 const feeLabel = event => /^\d{1,12}$/.test(event?.fee ?? '') ? new Intl.NumberFormat('ko-KR').format(Number(event.fee))+'원' : '';
@@ -129,7 +151,7 @@ function drawDetail() {
   const x=all().find(r=>r.id===selected);
   if(!x) { $('detail').innerHTML=empty('강사를 선택하거나 새로 등록하세요.'); return; }
   const events=[...x.events].sort(dateSort), reviews=[...x.reviews].sort(dateSort);
-  const overview='<div class="overview">'+box('주요 이력',x.career)+box('강의 주제',x.topics)+bookSection(x.books||[])+'</div><section><div class="sectionhead"><h3>최근 강의 이력</h3><button data-tab="1">전체 이력 보기</button></div><div style="margin-top:9px">'+records(events.slice(0,3),'event',true)+'</div></section>'+
+  const overview='<div class="overview">'+listKeys.map(key=>profileList(key,x[key]||[])).join('')+'</div><section><div class="sectionhead"><h3>최근 강의 이력</h3><button data-tab="1">전체 이력 보기</button></div><div style="margin-top:9px">'+records(events.slice(0,3),'event',true)+'</div></section>'+
     ('<div class="source">'+[link(x.source,'공개 프로필 출처 ↗'),link(x.yearSource,'출생연도 출처 ↗'),
       ...(Array.isArray(x.sources)?x.sources.map(s=>s&&link(s.url,s.label)):[])].filter(Boolean).join(' · ')+'</div>');
   const history='<div class="sectionhead"><h3>강의 이력 '+events.length+'건</h3><button data-action="event">＋ 이력 등록</button></div><div>'+records(events,'event')+'</div>';
@@ -166,10 +188,10 @@ $('detail').addEventListener('click',e=>{
   const tabButton=e.target.closest('[data-tab]');
   if(tabButton){tab=Number(tabButton.dataset.tab);drawDetail();$('tab-'+tab)?.focus();}
   const action=e.target.closest('[data-action]');
-  if(action) openForm(action.dataset.action,all().find(r=>r.id===selected),action.dataset.id);
+  if(action) openForm(action.dataset.action,all().find(r=>r.id===selected),action.dataset.id,{},action.dataset.section);
 });
 const forms = {
-  person:[['name','이름','text',1],['role','소속·직함','text',1],['year','출생연도','year'],['yearSource','출생연도 출처 URL','url'],['category','분야 (여러 분야는 쉼표로 구분)','text'],['photo','사진 URL','url'],['source','프로필 출처 URL','url'],['career','주요 이력 (한 줄에 한 건)','textarea'],['topics','강의 주제 (한 줄에 한 건)','textarea'],['books','저서 (한 줄에 한 권)','textarea']],
+  person:[['name','이름','text',1],['role','소속·직함','text',1],['year','출생연도','year'],['yearSource','출생연도 출처 URL','url'],['category','분야 (여러 분야는 쉼표로 구분)','text'],['photo','사진 URL','url'],['source','프로필 출처 URL','url']],
   event:[['title','강의 주제','text',1],['date','강의 날짜','date'],['place','강의 장소','text'],['host','주최 기관','text'],['fee','강의료 (원, 선택)','fee'],['contact','섭외 연락처 (선택)','text'],['status','확인 상태','text'],['published','후기 게시일','date'],['source','출처 URL','url']],
   review:[['title','강의 주제','text',1],['lectureDate','강의 날짜','date',1],['date','평가 날짜','date',1],['grade','평가 등급','grade',1],['note','평가 의견','textarea']]
 };
@@ -183,12 +205,20 @@ function field([name,label,type,required],data,events) {
   if(events?.length && name==='title') control='<input'+attr+' list="event-titles" value="'+esc(value)+'"><datalist id="event-titles">'+events.map(e=>'<option value="'+esc(e.title)+'">').join('')+'</datalist>';
   return '<label>'+label+control+'</label>';
 }
-function openForm(kind,row,id,draft={}) {
-  editor={kind,row,id,photo:photoURL((row||draft).photo)?.startsWith('data:')?(row||draft).photo:''};
+function openForm(kind,row,id,draft={},section) {
+  editor={kind,row,id,section,photo:photoURL((row||draft).photo)?.startsWith('data:')?(row||draft).photo:''};
   let data=kind==='person'?(row||draft):((kind==='event'?row.events:row.reviews).find(x=>x.id===id)||{});
   if(kind==='review')data={...data,date:data.date||todayKorea(),grade:gradeOf(data)||''};
   $('dialog-title').textContent=({person:'강사',event:'강의 이력',review:'강의 평가'})[kind]+(id || (row&&kind==='person')?' 수정':' 등록');
   $('fields').innerHTML=forms[kind].map(f=>field(f,data,kind==='review'?row.events:null)).join('');
+  if(kind==='person'){
+    if(section){
+      $('dialog-title').textContent=profileLists[section]+' 수정';
+      $('fields').innerHTML=listEditor(section,data[section]);
+    }else{
+      $('fields').insertAdjacentHTML('beforeend',listKeys.map(key=>listEditor(key,data[key])).join(''));
+    }
+  }
   if(kind==='review' && row.events.some(e=>e.date)){
     const dated=row.events.filter(e=>e.date).sort(dateSort);
     $('fields').insertAdjacentHTML('afterbegin','<label>등록된 강의 선택<select id="review-event"><option value="">직접 입력</option>'+dated.map((e,i)=>'<option value="'+i+'">'+esc(e.date+' · '+e.title)+'</option>').join('')+'</select></label>');
@@ -199,7 +229,7 @@ function openForm(kind,row,id,draft={}) {
       $('editor').elements.lectureDate.value=event.date;
     };
   }
-  if(kind==='person'){
+  if(kind==='person' && !section){
     const photoInput=$('fields').querySelector('[name="photo"]');
     if(editor.photo) photoInput.value='';
     window.attachSpeakerPhotos?.($('fields'),editor,photoInput);
@@ -210,11 +240,24 @@ function openForm(kind,row,id,draft={}) {
   $('form-error').textContent='';
   $('dialog').showModal();
 }
+$('fields').addEventListener('click',event=>{
+  const button=event.target.closest('[data-add-row],[data-remove-row]');
+  if(!button)return;
+  const group=button.closest('[data-profile-list]');
+  if(button.hasAttribute('data-remove-row')){
+    const row=button.closest('.profile-edit-row');
+    const focusTarget=row.nextElementSibling?.querySelector('input')||row.previousElementSibling?.querySelector('input')||group.querySelector('[data-add-row]');
+    row.remove();focusTarget.focus();return;
+  }
+  const rows=group.querySelector('[data-profile-rows]');
+  rows.insertAdjacentHTML('beforeend',listRow(profileLists[group.dataset.profileList]));
+  rows.lastElementChild.querySelector('input').focus();
+});
 $('add').onclick=()=>window.openSpeakerLookup();
 $('close').onclick=$('cancel').onclick=()=>$('dialog').close();
 $('editor').addEventListener('submit',e=>{
   e.preventDefault();
-  const {kind,row,id}=editor;
+  const {kind,row,id,section}=editor;
   const data=Object.fromEntries([...new FormData(e.target)].map(([k,v])=>[k,v.trim()]));
   const err=message=>{$('form-error').textContent=message;};
   if(!data.title && kind!=='person') return err('강의 주제를 입력하세요.');
@@ -227,14 +270,16 @@ $('editor').addEventListener('submit',e=>{
     data.fee=data.fee ? String(Number(data.fee.replaceAll(',',''))) : '';
   }
   let next;
-  if(kind==='person'){
+  if(section){
+    next={...row,[section]:profileListValues($('fields').querySelector('[data-profile-list="'+section+'"]'))};
+  }else if(kind==='person'){
     if(!data.name||!data.role) return err('이름과 소속·직함을 입력하세요.');
     if(data.year && (+data.year<1900 || +data.year>new Date().getFullYear())) return err('출생연도를 확인하세요.');
     const duplicate=all().find(x=>x.id!==row?.id && normalize(x.name)===normalize(data.name) && normalize(x.role)===normalize(data.role) && (!x.year || !data.year || x.year===data.year));
     if(duplicate)return err('같은 이름과 소속·직함의 강사가 있습니다. 기존 프로필을 확인하세요.');
     data.category=categoryList(data).join(', ');
     next={events:[],reviews:[],...row,...data,photo:data.photo||editor.photo,id:row?.id||uid()};
-    for(const k of ['career','topics','books']) next[k]=data[k].split('\n').map(s=>s.trim()).filter(Boolean);
+    for(const key of listKeys)next[key]=profileListValues($('fields').querySelector('[data-profile-list=+key+]'));
   } else {
     const key=kind==='event'?'events':'reviews';
     const entry={id:id||uid(),...data};

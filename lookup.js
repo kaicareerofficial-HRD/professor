@@ -135,10 +135,8 @@ function fillRecognized(text,fields) {
     if(heading){section=/^강/.test(heading[1])?'topics':/저서|저술/.test(heading[1])?'books':'career';if(heading[2])output[section].push(heading[2]);}
     else output[section].push(line);
   }
-  for(const key of Object.keys(output)){
-    form[key].value=[...new Set([...lines(form[key].value),...output[key]])].join('\n');
-  }
-  fields.querySelector('textarea[name="career"]').scrollIntoView({block:'nearest'});
+  for(const [key,values] of Object.entries(output))appendProfileListValues(fields,key,values);
+  fields.querySelector('[data-profile-list="career"]')?.scrollIntoView({block:'nearest'});
 }
 window.attachSpeakerPhotos=(fields,state,photoInput)=>{
   fields.insertAdjacentHTML('afterbegin','<section class="box photo-fields"><h3>프로필 사진과 이력 이미지</h3><label>강사 사진 파일<input id="speaker-portrait" type="file" accept="image/jpeg,image/png,image/webp"></label><label>이력이 들어 있는 이미지<input id="speaker-doc" type="file" accept="image/jpeg,image/png,image/webp"></label><label class="photo-check"><input id="doc-as-photo" type="checkbox"> 이력 이미지도 프로필 사진으로 사용</label><p id="photo-status" role="status"></p><img id="photo-preview" alt="업로드한 강사 사진" hidden><button type="button" id="remove-photo" hidden>첨부 사진 제거</button></section>');
