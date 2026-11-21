@@ -524,6 +524,19 @@ function categorizeTopics(topics) {
   return [...groups].sort((a,b)=>a[0]==='미분류'?1:b[0]==='미분류'?-1:a[0].localeCompare(b[0],'ko'));
 }
 
+function cardMeter(value,maximum,extra='') {
+  const percent=maximum?Math.round(value/maximum*100):0;
+  return '<span class="card-meter '+extra+'" aria-hidden="true"><span style="width:'+percent+'%"></span></span>';
+}
+function fieldSpeakerCount(matches,field) {
+  const ids=new Set();
+  for(const [,topic] of matches){
+    for(const {speaker} of topic.speakers.values()){
+      if(field==='미분류' || categoryList(speaker).includes(field))ids.add(speaker.id);
+    }
+  }
+  return ids.size;
+}
 function drawTopics() {
   const speakers=all();
   const topics=groupTopics(speakers);
@@ -557,13 +570,18 @@ function drawTopics() {
     return [{field,matches}];
   });
   $('topic-count').textContent='분야 '+grouped.length+'개 · 주제 '+matchedTopics.size+'개 / 전체 '+topics.size+'개';
+  const maxTopics=Math.max(0,...grouped.map(group=>group.matches.length));
   result.innerHTML=grouped.length?grouped.map(({field,matches})=>{
     const limit=topicLimits.get(field)||12;
+    const maxEvents=Math.max(0,...matches.map(([,topic])=>topic.eventCount));
     const cards=matches.slice(0,limit).map(([key,topic])=>
       '<button class="box topic-card" type="button" data-topic-key="'+esc(key)+'"><strong>'+esc(topic.title)+
-      '</strong><br><small>강사 '+topic.speakers.size+'명 · 강의 이력 '+topic.eventCount+'건</small></button>').join('');
+      '</strong><small class="topic-metrics">강사 <b>'+topic.speakers.size+'명</b> · 강의 이력 <b>'+topic.eventCount+'건</b></small>'+
+      cardMeter(topic.eventCount,maxEvents,'event-meter')+'</button>').join('');
     return '<details class="box topic-category" data-topic-category="'+esc(field)+'"'+(terms.length||openFields.has(field)?' open':'')+'>'+
-      '<summary><strong>'+esc(field)+'</strong> <small>주제 '+matches.length+'개</small></summary><div class="overview">'+cards+'</div>'+
+      '<summary><strong>'+esc(field)+'</strong><small class="topic-metrics">주제 <b>'+matches.length+
+      '개</b> · 강사 <b>'+fieldSpeakerCount(matches,field)+'명</b></small>'+
+      cardMeter(matches.length,maxTopics)+'</summary><div class="overview">'+cards+'</div>'+
       (matches.length>limit?'<button type="button" data-topic-more>이 분야 주제 더 보기</button>':'')+'</details>';
   }).join(''):empty('검색 조건에 맞는 강의 주제가 없습니다.');
 }
