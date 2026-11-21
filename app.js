@@ -568,11 +568,19 @@ function drawTopics() {
   $('topic-filter').hidden=Boolean(selectedTopic);
   const result=$('topic-results');
   if(selectedTopic){
-    const speakerCards=[...selectedTopic.speakers.values()].map(({speaker,events})=>
-      '<section class="box"><div class="sectionhead"><h3>'+esc(speaker.name)+'</h3>'+
-      '<button type="button" data-person="'+esc(speaker.id)+'">프로필 보기</button></div>'+
-      '<p>'+esc(speaker.role)+'</p><p style="margin:8px 0">등록된 강의 이력 '+events.length+'건</p>'+
-      (events.length?records([...events].sort(dateSort),'event',true):empty('이 주제의 강의 이력이 아직 없습니다.'))+'</section>');
+    const speakerCards=[...selectedTopic.speakers.values()].map(({speaker,events})=>{
+      const photo=photoURL(speaker.photo);
+      const related=speaker.topics.filter(title=>normalize(title)!==activeTopic);
+      const otherTopics=related.length?'<details style="margin-top:10px"><summary>이 강사의 다른 주제 '+related.length+'개</summary><ul>'+
+        related.map(title=>'<li>'+esc(title)+'</li>').join('')+'</ul></details>':'';
+      return '<section class="box"><div class="sectionhead"><div style="display:flex;align-items:center;gap:10px">'+
+        (photo?'<img src="'+esc(photo)+'" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:44px;height:50px;object-fit:cover;border-radius:8px">':'')+
+        '<div><h3>'+esc(speaker.name)+'</h3><p>'+esc(speaker.role)+'</p></div></div>'+
+        '<button type="button" data-person="'+esc(speaker.id)+'">프로필 보기</button></div>'+
+        '<p style="margin:10px 0"><small>선택한 강의 주제</small><br><strong>'+esc(selectedTopic.title)+'</strong></p>'+
+        (events.length?records([...events].sort(dateSort),'event',true):empty('이 주제의 강의 이력이 아직 없습니다.'))+
+        otherTopics+'</section>';
+    });
     result.innerHTML='<div class="box" style="margin-bottom:12px"><div class="sectionhead"><h2 id="topic-title" tabindex="-1">'+esc(selectedTopic.title)+'</h2>'+
       '<button type="button" id="topic-back">주제 목록으로</button></div>'+
       '<p>강사 '+selectedTopic.speakers.size+'명 · 등록된 강의 이력 '+selectedTopic.eventCount+'건</p></div>'+
