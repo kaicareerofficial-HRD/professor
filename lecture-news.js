@@ -1,5 +1,5 @@
 window.LECTURE_NEWS = {
-  "checkedOn": "2026-11-21",
+  "checkedOn": "2026-11-22",
   "items": [
     {
       "id": "ddj-20261125-ai",
@@ -80,6 +80,39 @@ window.LECTURE_NEWS = {
       "newSpeaker": false,
       "status": "행사 공지",
       "foundOn": "2026-11-21"
+    },
+    {
+      "id": "anyang-13606",
+      "speaker": "구본권",
+      "role": "작가·국가교육위원회 전문위원",
+      "title": "AI시대의 변화와 미래 준비",
+      "date": "2026-11-26",
+      "time": "19:00~21:00",
+      "place": "관양도서관 4층 시청각실",
+      "host": "안양시도서관",
+      "source": "https://lib.anyang.go.kr/pyeongchon/lectureDetail.do?lectureIdx=13606",
+      "category": "AI·IT, 인문학",
+      "matchRole": "",
+      "newSpeaker": true,
+      "status": "행사 공지",
+      "foundOn": "2026-11-22"
+    },
+    {
+      "id": "dge-7176-kim",
+      "speaker": "김경일",
+      "role": "인지심리학자·심리학과 교수",
+      "title": "AI 시대, 자녀교육의 방향",
+      "date": "2026-11-28",
+      "time": "10:20~12:00",
+      "place": "대구교육학부모센터 대강의실(별관)",
+      "host": "대구광역시교육청",
+      "source": "https://www.dge.go.kr/yeyak/selectResveInfo.do?mi=4232&resveSe=EDU&resveSn=7176",
+      "category": "AI·IT, 교육",
+      "speakerId": "pnf-1372",
+      "matchRole": "인지심리학자",
+      "newSpeaker": false,
+      "status": "행사 공지",
+      "foundOn": "2026-11-22"
     }
   ]
 };
