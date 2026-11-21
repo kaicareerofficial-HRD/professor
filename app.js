@@ -39,10 +39,46 @@ function valid(rows) {
 let changed = [];
 try { const local = migrateReviews(JSON.parse(localStorage.getItem(KEY))); if(valid(local)) changed = local; } catch {}
 const seedById = new Map(seed.map(row=>[row.id,row]));
-const all = () => sorted([...new Map([...seedById,...changed.map(row=>{
+const newsData=window.LECTURE_NEWS || {};
+const publicNews=(Array.isArray(newsData.items)?newsData.items:[]).filter(entry=>
+  entry && ['id','speaker','role','title','date','source'].every(key=>typeof entry[key]==='string' && entry[key].trim()) &&
+  /^\d{4}-\d{2}-\d{2}$/.test(entry.date) && url(entry.source));
+function newsLectureMatch(event,item) {
+  return event.id==='public-news-'+item.id ||
+    (event.date===item.date && normalize(event.title)===normalize(item.title) &&
+      (!event.time || !item.time || event.time===item.time));
+}
+function mergeLectureNews(profiles,items) {
+  const byId=new Map(profiles.map(speaker=>[speaker.id,speaker]));
+  const byName=new Map();
+  for(const speaker of profiles){
+    const key=normalize(speaker.name);
+    if(!byName.has(key))byName.set(key,[]);
+    byName.get(key).push(speaker.id);
+  }
+  for(const item of items){
+    const name=normalize(item.speaker);
+    const candidates=byName.get(name)||[];
+    const matched=candidates.filter(id=>normalize(byId.get(id).role).includes(normalize(item.matchRole||item.role)));
+    const id=item.speakerId && byId.has(item.speakerId) && normalize(byId.get(item.speakerId).name)===name
+      ? item.speakerId : matched.length===1 ? matched[0] : '';
+    if(!id && (!item.newSpeaker || candidates.length))continue;
+    const speaker=id?byId.get(id):{id:'news-'+name,name:item.speaker,role:item.role,source:item.source,
+      category:item.category||'',year:'',photo:'',topics:[],career:[],books:[],events:[],reviews:[]};
+    const event={id:'public-news-'+item.id,title:item.title,date:item.date,time:item.time||'',place:item.place||'',
+      host:item.host||'',status:item.status||'행사 공지',source:item.source};
+    const previous=speaker.events.find(e=>newsLectureMatch(e,item));
+    const events=previous ? speaker.events.map(e=>e===previous ?
+      (e.id===event.id ? {...e,...event,source:e.source||event.source} : e) : e) : [...speaker.events,event];
+    byId.set(speaker.id,{...speaker,events});
+    if(!id)byName.set(name,[speaker.id]);
+  }
+  return [...byId.values()];
+}
+const all = () => sorted(mergeLectureNews([...new Map([...seedById,...changed.map(row=>{
   const base=seedById.get(row.id);
   return [row.id,row.books===undefined && base?.books?{...row,books:base.books}:row];
-})]).values()]);
+})]).values()],publicNews));
 let selected = seed.find(r=>r.name==='김경일')?.id || all()[0]?.id;
 let tab = 0, active = -1, matches = [], editor = null, toastTimer;
 const search = $('search');
@@ -127,7 +163,7 @@ function records(items, kind, preview=false) {
   if(!items.length) return empty(kind==='event'?'등록된 강의 이력이 없습니다.':'평가 이력 없음');
   return items.map(e=>'<div class="record"><div class="sectionhead"><strong>'+esc(e.title)+'</strong>'+(kind==='event'?feeNote(e):'')+
     (preview?'':'<button data-action="'+kind+'" data-id="'+esc(e.id)+'">수정</button>')+'</div><p>'+
-    esc(kind==='event'?[e.date||'일자 미확인',e.place||'장소 미확인',e.host,e.status,e.published && '후기 게시 '+e.published].filter(Boolean).join(' · '):'평가일 '+(e.date||'미확인')+' · '+gradeOf(e)+'등급')+'</p>'+
+    esc(kind==='event'?[[e.date||'일자 미확인',e.time].filter(Boolean).join(' '),e.place||'장소 미확인',e.host,e.status,e.published && '후기 게시 '+e.published].filter(Boolean).join(' · '):'평가일 '+(e.date||'미확인')+' · '+gradeOf(e)+'등급')+'</p>'+
     (kind==='event'?(!preview&&e.contact?'<p>섭외 연락처 · '+esc(e.contact)+'</p>':'')+link(e.source,'강의 출처 ↗'):(e.note?'<p>'+esc(e.note)+'</p>':''))+'</div>').join('');
 }
 function evaluationGroups(reviews) {
@@ -389,8 +425,11 @@ const directoryLayout=document.querySelector('.layout');
 directoryIntro.insertAdjacentHTML('beforebegin',
   '<nav aria-label="화면 이동" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">'+
     '<button type="button" id="topic-nav">주제별 강의 현황</button><button type="button" id="directory-nav">강사 찾기</button></nav>'+
-  '<section id="topic-home" aria-label="주제별 강의 현황">'+
-    '<section class="intro"><div><h1>주제별 강의 현황</h1><p>주제를 선택하면 강사별 프로필과 등록된 강의 이력을 볼 수 있습니다.</p></div>'+
+  '<section id="topic-home" aria-label="강의 뉴스와 주제별 현황">'+
+    '<section id="lecture-news" aria-labelledby="lecture-news-title" class="box" style="margin-bottom:18px">'+
+      '<h1 id="lecture-news-title">오늘의 강의 뉴스</h1><p id="lecture-news-date" style="margin:8px 0"></p>'+
+      '<div id="lecture-news-items" class="overview"></div></section>'+
+    '<section class="intro"><div><h2>주제별 강의 현황</h2><p>주제를 선택하면 강사별 프로필과 등록된 강의 이력을 볼 수 있습니다.</p></div>'+
     '<button type="button" class="primary" id="topic-add">＋ 강사 등록</button></section>'+
     '<div class="box" id="topic-filter"><label for="topic-search">강의 주제 검색</label>'+
       '<input id="topic-search" type="search" placeholder="예: 리더십, 조직문화, 생성형 AI" style="margin:8px 0">'+
@@ -405,9 +444,31 @@ function showTopicView(home) {
   $('directory-nav').setAttribute('aria-current',home?'false':'page');
   if(home)drawTopics();
 }
+function drawLectureNews(speakers) {
+  const today=todayKorea();
+  const recent=new Date(today+'T00:00:00+09:00');
+  recent.setUTCDate(recent.getUTCDate()-7);
+  const cutoff=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(recent);
+  $('lecture-news-date').textContent=newsData.checkedOn ? newsData.checkedOn+' 확인 · 한국시간' : '확인된 강의 뉴스를 준비 중입니다.';
+  const ordered=publicNews.filter(item=>item.date>=cutoff).sort((a,b)=>{
+    const first=a.date>=today, second=b.date>=today;
+    if(first!==second)return first?-1:1;
+    return (first?a.date.localeCompare(b.date):b.date.localeCompare(a.date)) || (a.time||'').localeCompare(b.time||'');
+  });
+  $('lecture-news-items').innerHTML=ordered.length?ordered.slice(0,8).map(item=>{
+    const speaker=speakers.find(s=>normalize(s.name)===normalize(item.speaker) && s.events.some(e=>newsLectureMatch(e,item)));
+    const metadata=[item.date,item.time,item.place,item.host].filter(Boolean).map(esc).join(' · ');
+    return '<article class="record"><p><strong>'+esc(item.speaker)+'</strong> · '+esc(item.status||'행사 공지')+'</p>'+
+      '<h3>'+esc(item.title)+'</h3><p>'+metadata+'</p>'+link(item.source,'출처 보기 ↗')+
+      (speaker?' <button type="button" data-person="'+esc(speaker.id)+'">강사 프로필</button>':'')+'</article>';
+  }).join(''):empty('최근 확인된 강의 뉴스가 없습니다.');
+}
 function drawTopics() {
-  const topics=groupTopics(all());
+  const speakers=all();
+  const topics=groupTopics(speakers);
   const selectedTopic=topics.get(activeTopic);
+  $('lecture-news').hidden=Boolean(selectedTopic);
+  if(!selectedTopic)drawLectureNews(speakers);
   $('topic-filter').hidden=Boolean(selectedTopic);
   const result=$('topic-results');
   if(selectedTopic){
