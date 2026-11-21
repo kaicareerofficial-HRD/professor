@@ -524,9 +524,31 @@ function categorizeTopics(topics) {
   return [...groups].sort((a,b)=>a[0]==='미분류'?1:b[0]==='미분류'?-1:a[0].localeCompare(b[0],'ko'));
 }
 
-function cardMeter(value,maximum,extra='') {
-  const percent=maximum?Math.round(value/maximum*100):0;
-  return '<span class="card-meter '+extra+'" aria-hidden="true"><span style="width:'+percent+'%"></span></span>';
+const topicSymbols=[
+  [/항공|우주|비행|항공기|로켓/iu,'✈️','#e6effa'],
+  [/인공지능|생성형|챗gpt|chatgpt|\bai\b|로봇|디지털|데이터|코딩|인공지능/iu,'🤖','#e9eafa'],
+  [/리더십|리더|팀장|코칭|관리자/iu,'🧭','#e1f2ee'],
+  [/소통|커뮤니케이션|스피치|대화|관계|협상|발표/iu,'💬','#e4f1fa'],
+  [/인사|노무|채용|조직문화|\bhrd?\b/iu,'🤝','#f7ecdd'],
+  [/경제|금융|투자|연금|재테크|자산|부동산/iu,'💰','#fbf0d7'],
+  [/마케팅|브랜드|홍보|광고|\bsns\b/iu,'📣','#f8e8ed'],
+  [/안전|재난|응급|소방|위기/iu,'🛡️','#f4e9e8'],
+  [/건강|의학|심리|힐링|수면|마음|복지/iu,'🌿','#e5f3e4'],
+  [/예술|문화|미술|음악|영화|디자인/iu,'🎨','#f1e8f7'],
+  [/인문|역사|철학|문학|독서|글쓰기|고전/iu,'📚','#f5ecde'],
+  [/과학|물리|생태|생명|환경|esg/iu,'🔬','#e1f2ed'],
+  [/교육|학습|교수법|진로|자기계발/iu,'🎓','#e5edf9'],
+  [/경영|비즈니스|창업|혁신|전략|성과/iu,'💼','#edf0f5'],
+  [/국제|글로벌|외교|해외|세계/iu,'🌐','#e5f1f8'],
+  [/법률|법학|법원|법제|규제/iu,'⚖️','#f0edf5'],
+  [/라이프|취미|여행|생활/iu,'☀️','#f9efdb'],
+];
+function topicSymbol(title,field='') {
+  const symbol=topicSymbols.find(([pattern])=>pattern.test(title)) ||
+    topicSymbols.find(([pattern])=>pattern.test(field));
+  const [,icon,tint]=symbol||[null,'💡','#eef0f7'];
+  return '<span aria-hidden="true" style="display:grid;place-items:center;width:44px;height:44px;'+
+    'border-radius:12px;background:'+tint+';font-size:26px;line-height:1;margin-bottom:4px">'+icon+'</span>';
 }
 function fieldSpeakerCount(matches,field) {
   const ids=new Set();
@@ -570,18 +592,14 @@ function drawTopics() {
     return [{field,matches}];
   });
   $('topic-count').textContent='분야 '+grouped.length+'개 · 주제 '+matchedTopics.size+'개 / 전체 '+topics.size+'개';
-  const maxTopics=Math.max(0,...grouped.map(group=>group.matches.length));
   result.innerHTML=grouped.length?grouped.map(({field,matches})=>{
     const limit=topicLimits.get(field)||12;
-    const maxEvents=Math.max(0,...matches.map(([,topic])=>topic.eventCount));
     const cards=matches.slice(0,limit).map(([key,topic])=>
-      '<button class="box topic-card" type="button" data-topic-key="'+esc(key)+'"><strong>'+esc(topic.title)+
-      '</strong><small class="topic-metrics">강사 <b>'+topic.speakers.size+'명</b> · 강의 이력 <b>'+topic.eventCount+'건</b></small>'+
-      cardMeter(topic.eventCount,maxEvents,'event-meter')+'</button>').join('');
+      '<button class="box topic-card" type="button" data-topic-key="'+esc(key)+'">'+topicSymbol(topic.title,field)+'<strong>'+esc(topic.title)+
+      '</strong><small class="topic-metrics">강사 <b>'+topic.speakers.size+'명</b> · 강의 이력 <b>'+topic.eventCount+'건</b></small></button>').join('');
     return '<details class="box topic-category" data-topic-category="'+esc(field)+'"'+(terms.length||openFields.has(field)?' open':'')+'>'+
-      '<summary><strong>'+esc(field)+'</strong><small class="topic-metrics">주제 <b>'+matches.length+
-      '개</b> · 강사 <b>'+fieldSpeakerCount(matches,field)+'명</b></small>'+
-      cardMeter(matches.length,maxTopics)+'</summary><div class="overview">'+cards+'</div>'+
+      '<summary>'+topicSymbol(field)+'<strong style="grid-column:1">'+esc(field)+'</strong><small class="topic-metrics">주제 <b>'+matches.length+
+      '개</b> · 강사 <b>'+fieldSpeakerCount(matches,field)+'명</b></small></summary><div class="overview">'+cards+'</div>'+
       (matches.length>limit?'<button type="button" data-topic-more>이 분야 주제 더 보기</button>':'')+'</details>';
   }).join(''):empty('검색 조건에 맞는 강의 주제가 없습니다.');
 }
