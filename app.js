@@ -234,7 +234,7 @@ function openForm(kind,row,id,draft={},section) {
     if(editor.photo) photoInput.value='';
     window.attachSpeakerPhotos?.($('fields'),editor,photoInput);
     if(draft.webCandidate){
-      $('fields').insertAdjacentHTML('beforeend','<label class="photo-check"><input type="checkbox" required> 출처를 대조해 선택한 강사와 같은 인물임을 확인했습니다.</label>');
+      $('fields').insertAdjacentHTML('beforeend','<label class="photo-check"><input type="checkbox" id="confirm-web-speaker" required> 출처를 대조해 선택한 강사와 같은 인물임을 확인했습니다.</label>');
     }
   }
   $('form-error').textContent='';
@@ -255,31 +255,79 @@ $('fields').addEventListener('click',event=>{
 });
 $('add').onclick=()=>window.openSpeakerLookup();
 $('close').onclick=$('cancel').onclick=()=>$('dialog').close();
-$('editor').addEventListener('submit',e=>{
+const editForm=$('editor');
+editForm.noValidate=true;
+function clearEditErrors() {
+  for(const field of editForm.querySelectorAll('[aria-invalid="true"]')){
+    document.getElementById(field.getAttribute('aria-describedby'))?.remove();
+    field.removeAttribute('aria-invalid');
+    field.removeAttribute('aria-describedby');
+  }
+  $('form-error').textContent='';
+}
+editForm.addEventListener('input',event=>{
+  const field=event.target;
+  if(field.getAttribute('aria-invalid')!=='true')return;
+  document.getElementById(field.getAttribute('aria-describedby'))?.remove();
+  field.removeAttribute('aria-invalid');
+  field.removeAttribute('aria-describedby');
+  if(!editForm.querySelector('[aria-invalid="true"]'))$('form-error').textContent='';
+});
+editForm.addEventListener('submit',e=>{
   e.preventDefault();
   const {kind,row,id,section}=editor;
   const data=Object.fromEntries([...new FormData(e.target)].map(([k,v])=>[k,v.trim()]));
-  const err=message=>{$('form-error').textContent=message;};
-  if(!data.title && kind!=='person') return err('강의 주제를 입력하세요.');
-  if(Object.keys(data).filter(k=>['photo','source','yearSource'].includes(k)).some(k=>data[k]&&!url(data[k])))return err('웹 주소는 https:// 또는 http://로 입력하세요.');
-  if(kind==='review' && (!grades.includes(data.grade) || !data.lectureDate || data.lectureDate>data.date))
-    return err('평가 등급과 강의 날짜를 확인하세요. 평가 날짜는 강의 날짜 이후여야 합니다.');
+  clearEditErrors();
+  const err=message=>{
+    $('form-error').textContent=message;
+    $('form-error').scrollIntoView({block:'nearest'});
+  };
+  const errors=[];
+  const mark=(name,message)=>errors.push([editForm.elements.namedItem(name)||$(name),message]);
+  for(const [name,label,type,required] of section?[]:forms[kind]){
+    const field=editForm.elements.namedItem(name);
+    const value=data[name];
+    if(field.validity.badInput)mark(name,label+' 형식을 확인하세요.');
+    else if(required && !value)mark(name,type==='grade'?'평가 등급을 선택하세요.':label+' 항목을 입력하세요.');
+    else if(type==='url' && value && !url(value))mark(name,label+'에 http:// 또는 https://로 시작하는 주소를 입력하세요.');
+    else if(type==='year' && value && (!/^\d{4}$/.test(value) || +value<1900 || +value>new Date().getFullYear()))
+      mark(name,'출생연도는 1900년부터 올해까지의 네 자리 숫자로 입력하세요.');
+  }
+  const confirmation=$('confirm-web-speaker');
+  if(confirmation&&!confirmation.checked)mark(confirmation.id,'출처와 강사 정보가 일치하면 확인란에 체크하세요.');
+  if(kind==='review' && data.lectureDate && data.date && data.lectureDate>data.date)
+    mark('date','평가 날짜는 강의 날짜와 같거나 이후여야 합니다.');
   if(kind==='event'){
     if(data.fee && !/^(?:[0-9]{1,12}|[0-9]{1,3}(?:,[0-9]{3}){1,3})$/.test(data.fee))
-      return err('강의료는 원 단위 숫자로 입력하세요. 예: 500,000');
-    data.fee=data.fee ? String(Number(data.fee.replaceAll(',',''))) : '';
+      mark('fee','강의료는 원 단위 숫자로 입력하세요. 예: 500,000');
+    else data.fee=data.fee ? String(Number(data.fee.replaceAll(',',''))) : '';
+  }
+  if(kind==='person'&&!section&&!errors.length){
+    const duplicate=all().find(x=>x.id!==row?.id && normalize(x.name)===normalize(data.name) && normalize(x.role)===normalize(data.role) && (!x.year || !data.year || x.year===data.year));
+    if(duplicate)mark('name','같은 이름과 소속·직함의 강사가 이미 등록되어 있습니다. 기존 프로필을 확인하세요.');
+  }
+  if(errors.length){
+    errors.forEach(([field,message],index)=>{
+      const notice=document.createElement('span');
+      notice.id='edit-field-error-'+index;
+      notice.style.color='#9e2727';
+      notice.style.fontSize='0.85rem';
+      notice.textContent=message;
+      field.closest('label').append(notice);
+      field.setAttribute('aria-invalid','true');
+      field.setAttribute('aria-describedby',notice.id);
+    });
+    $('form-error').textContent=errors.length+'개 항목을 확인하세요.';
+    errors[0][0].focus();
+    return;
   }
   let next;
   if(section){
     next={...row,[section]:profileListValues($('fields').querySelector('[data-profile-list="'+section+'"]'))};
   }else if(kind==='person'){
-    if(!data.name||!data.role) return err('이름과 소속·직함을 입력하세요.');
-    if(data.year && (+data.year<1900 || +data.year>new Date().getFullYear())) return err('출생연도를 확인하세요.');
-    const duplicate=all().find(x=>x.id!==row?.id && normalize(x.name)===normalize(data.name) && normalize(x.role)===normalize(data.role) && (!x.year || !data.year || x.year===data.year));
-    if(duplicate)return err('같은 이름과 소속·직함의 강사가 있습니다. 기존 프로필을 확인하세요.');
     data.category=categoryList(data).join(', ');
     next={events:[],reviews:[],...row,...data,photo:data.photo||editor.photo,id:row?.id||uid()};
-    for(const key of listKeys)next[key]=profileListValues($('fields').querySelector('[data-profile-list=+key+]'));
+    for(const key of listKeys)next[key]=profileListValues($('fields').querySelector('[data-profile-list="'+key+'"]'));
   } else {
     const key=kind==='event'?'events':'reviews';
     const entry={id:id||uid(),...data};
