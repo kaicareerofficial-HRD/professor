@@ -445,6 +445,27 @@ function showTopicView(home) {
   $('directory-nav').setAttribute('aria-current',home?'false':'page');
   if(home)drawTopics();
 }
+function newsStrip(label,headlines) {
+  return '<div class="news-strip" role="group" aria-label="'+esc(label)+'">'+
+    '<div class="news-track"><div class="news-line">'+headlines+'</div>'+
+    '<div class="news-line news-copy" aria-hidden="true" inert>'+headlines+'</div></div></div>';
+}
+
+function dailyNewsAdditions(items,today,speakers) {
+  const knownNames=new Set(items.filter(item=>item.newSpeaker && item.foundOn && item.foundOn<today).map(item=>normalize(item.speaker)));
+  const byName=new Map();
+  const byTitle=new Map();
+  for(const item of items){
+    if(item.foundOn!==today)continue;
+    const name=normalize(item.speaker),title=normalize(item.title);
+    if(!byTitle.has(title))byTitle.set(title,item);
+    if(!item.newSpeaker || knownNames.has(name) || byName.has(name))continue;
+    const speaker=speakers.find(s=>s.id==='news-'+name);
+    if(speaker)byName.set(name,{speaker,item});
+  }
+  return {people:[...byName.values()],topics:[...byTitle.values()]};
+}
+
 function drawLectureNews(speakers) {
   const today=todayKorea();
   const recent=new Date(today+'T00:00:00+09:00');
@@ -459,7 +480,8 @@ function drawLectureNews(speakers) {
   const entries=ordered.slice(0,12);
   const ticker=$('lecture-news-items');
   const pause=$('news-pause');
-  pause.hidden=entries.length===0 || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const daily=dailyNewsAdditions(publicNews,today,speakers);
+  pause.hidden=!(entries.length||daily.people.length||daily.topics.length) || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const headline=item=>{
     const speaker=speakers.find(s=>normalize(s.name)===normalize(item.speaker) && s.events.some(e=>newsLectureMatch(e,item)));
     const metadata=[item.date,item.time,item.place,item.status].filter(Boolean).map(esc).join(' · ');
@@ -468,12 +490,19 @@ function drawLectureNews(speakers) {
       (speaker?' <button type="button" data-person="'+esc(speaker.id)+'" aria-label="'+esc(item.speaker)+' 프로필">프로필</button>':'')+'</span>';
   };
   const rows=[entries.filter((_,index)=>index%2===0),entries.filter((_,index)=>index%2===1)];
-  ticker.innerHTML=entries.length?rows.filter(row=>row.length).map((row,index)=>{
-    const headlines=row.map(headline).join('');
-    return '<div class="news-strip" role="group" aria-label="강의 뉴스 '+(index+1)+'줄">'+
-      '<div class="news-track"><div class="news-line">'+headlines+'</div>'+
-      '<div class="news-line news-copy" aria-hidden="true" inert>'+headlines+'</div></div></div>';
-  }).join(''):empty('최근 확인된 강의 뉴스가 없습니다.');
+  const speakerLine=daily.people.map(({speaker,item})=>'<span class="news-headline">'+
+    '<button type="button" data-person="'+esc(speaker.id)+'">'+esc(item.speaker)+'</button>'+
+    '<small>'+esc(item.role)+'</small></span>').join('');
+  const topicLine=daily.topics.map(item=>'<span class="news-headline">'+link(item.source,item.title)+
+    ' <small>'+esc(item.speaker+' · '+item.date)+'</small></span>').join('');
+  const news=entries.length?rows.filter(row=>row.length).map((row,index)=>
+    newsStrip('강의 뉴스 '+(index+1)+'줄',row.map(headline).join(''))).join(''):
+    empty('최근 확인된 강의 뉴스가 없습니다.');
+  ticker.innerHTML=news+
+    '<section style="margin-top:12px"><h2 style="font-size:1rem;margin-bottom:4px">오늘 추가된 강사 <small>'+daily.people.length+'명</small></h2>'+
+      (speakerLine?newsStrip('오늘 추가된 강사',speakerLine):empty('오늘 추가된 강사가 없습니다.'))+'</section>'+
+    '<section style="margin-top:12px"><h2 style="font-size:1rem;margin-bottom:4px">오늘 추가된 강의 주제 <small>'+daily.topics.length+'개</small></h2>'+
+      (topicLine?newsStrip('오늘 추가된 강의 주제',topicLine):empty('오늘 추가된 강의 주제가 없습니다.'))+'</section>';
 }
 $('news-pause').onclick=()=>{
   const button=$('news-pause');
