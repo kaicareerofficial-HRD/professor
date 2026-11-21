@@ -96,20 +96,27 @@ function listRow(label,value='') {
   return '<div class="profile-edit-row"><input type="text" aria-label="'+esc(label)+' 항목" value="'+esc(value)+'">'+
     '<button type="button" data-remove-row aria-label="'+esc(label)+' 항목 삭제">삭제</button></div>';
 }
-function listEditor(key,items) {
+function listEditor(key,items,bulk=false) {
   const label=profileLists[key];
+  if(bulk)return '<fieldset class="profile-edit-list" data-profile-list="'+key+'"><legend>'+label+'</legend>'+
+    '<label>한 줄에 한 항목씩 입력하거나 붙여넣으세요.<textarea rows="4" aria-label="'+label+'">'+
+    esc((items||[]).join('\n'))+'</textarea></label></fieldset>';
   return '<fieldset class="profile-edit-list" data-profile-list="'+key+'"><legend>'+label+'</legend>'+
     '<div data-profile-rows>'+((items?.length?items:['']).map(item=>listRow(label,item)).join(''))+'</div>'+
     '<button type="button" data-add-row>'+label+' 추가</button></fieldset>';
 }
 function profileListValues(group) {
+  const bulk=group.querySelector('textarea');
+  if(bulk)return bulk.value.split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
   return [...group.querySelectorAll('input')].map(input=>input.value.trim()).filter(Boolean);
 }
 function appendProfileListValues(fields,key,values) {
   const group=fields.querySelector('[data-profile-list="'+key+'"]');
   if(!group || !values.length)return;
   const items=[...new Set([...profileListValues(group),...values])];
-  group.querySelector('[data-profile-rows]').innerHTML=items.map(item=>listRow(profileLists[key],item)).join('');
+  const bulk=group.querySelector('textarea');
+  if(bulk)bulk.value=items.join('\n');
+  else group.querySelector('[data-profile-rows]').innerHTML=items.map(item=>listRow(profileLists[key],item)).join('');
 }
 const dateSort = (a,b) => (b.date || b.published || '').localeCompare(a.date || a.published || '');
 const feeLabel = event => /^\d{1,12}$/.test(event?.fee ?? '') ? new Intl.NumberFormat('ko-KR').format(Number(event.fee))+'원' : '';
@@ -216,7 +223,7 @@ function openForm(kind,row,id,draft={},section) {
       $('dialog-title').textContent=profileLists[section]+' 수정';
       $('fields').innerHTML=listEditor(section,data[section]);
     }else{
-      $('fields').insertAdjacentHTML('beforeend',listKeys.map(key=>listEditor(key,data[key])).join(''));
+      $('fields').insertAdjacentHTML('beforeend',listKeys.map(key=>listEditor(key,data[key],!row)).join(''));
     }
   }
   if(kind==='review' && row.events.some(e=>e.date)){
