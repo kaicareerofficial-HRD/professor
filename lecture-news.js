@@ -1,5 +1,5 @@
 window.LECTURE_NEWS = {
-  "checkedOn": "2026-11-22",
+  "checkedOn": "2026-11-23",
   "items": [
     {
       "id": "ddj-20261125-ai",
@@ -113,6 +113,39 @@ window.LECTURE_NEWS = {
       "newSpeaker": false,
       "status": "행사 공지",
       "foundOn": "2026-11-22"
+    },
+    {
+      "id": "hanam-65372-kim",
+      "speaker": "김상욱",
+      "role": "경희대학교 물리학과 교수",
+      "title": "AI시대 하남人, 무엇을 준비해야할까?",
+      "date": "2026-12-17",
+      "time": "14:00~15:30",
+      "place": "하남문화예술회관 검단홀",
+      "host": "하남시",
+      "source": "https://hanam.gseek.kr/user/course/offline/view?s_sbjct_cycl_sn=1&s_sbjct_sn=65372",
+      "category": "AI·IT, 과학",
+      "speakerId": "pnf-1876",
+      "matchRole": "물리학",
+      "newSpeaker": false,
+      "status": "행사 공지",
+      "foundOn": "2026-11-23"
+    },
+    {
+      "id": "jbnu-219978-jung",
+      "speaker": "정일영",
+      "role": "언어학 박사",
+      "title": "내성적인 사람들에게 용기를",
+      "date": "2027-01-15",
+      "time": "14:00",
+      "place": "전대학술문화관",
+      "host": "전북대학교 중앙도서관",
+      "source": "https://www.jbnu.ac.kr/web/Board/219978/detailView.do",
+      "category": "자기계발, 소통",
+      "matchRole": "",
+      "newSpeaker": true,
+      "status": "행사 공지",
+      "foundOn": "2026-11-23"
     }
   ]
 };
