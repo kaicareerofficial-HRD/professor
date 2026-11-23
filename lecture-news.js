@@ -1,5 +1,5 @@
 window.LECTURE_NEWS = {
-  "checkedOn": "2026-11-23",
+  "checkedOn": "2026-11-24",
   "items": [
     {
       "id": "ddj-20261125-ai",
@@ -146,6 +146,38 @@ window.LECTURE_NEWS = {
       "newSpeaker": true,
       "status": "행사 공지",
       "foundOn": "2026-11-23"
+    },
+    {
+      "id": "gdlib-101477",
+      "speaker": "권성민",
+      "role": "예능 PD·작가",
+      "title": "질문은 어떻게 예능이 되는가?",
+      "date": "2026-12-05",
+      "time": "14:00~15:30",
+      "place": "강동숲속도서관 3층 스페이스 담담",
+      "host": "강동숲속도서관",
+      "source": "https://www.gdlibrary.or.kr/ss/menu/603/tmpr/lctr-evnt/reading/101477",
+      "category": "콘텐츠, 소통",
+      "matchRole": "",
+      "newSpeaker": true,
+      "status": "행사 공지",
+      "foundOn": "2026-11-24"
+    },
+    {
+      "id": "gdlib-101478",
+      "speaker": "최다은",
+      "role": "SBS 라디오 PD·작가",
+      "title": "영화를 기억하게 하는 음악",
+      "date": "2026-12-12",
+      "time": "14:00~15:30",
+      "place": "강동숲속도서관 3층 스페이스 담담",
+      "host": "강동숲속도서관",
+      "source": "https://www.gdlibrary.or.kr/ss/menu/603/tmpr/lctr-evnt/reading/101478",
+      "category": "문화예술, 콘텐츠",
+      "matchRole": "",
+      "newSpeaker": true,
+      "status": "행사 공지",
+      "foundOn": "2026-11-24"
     }
   ]
 };
