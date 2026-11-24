@@ -1,5 +1,5 @@
 window.LECTURE_NEWS = {
-  "checkedOn": "2026-11-24",
+  "checkedOn": "2026-11-25",
   "items": [
     {
       "id": "ddj-20261125-ai",
@@ -178,6 +178,38 @@ window.LECTURE_NEWS = {
       "newSpeaker": true,
       "status": "행사 공지",
       "foundOn": "2026-11-24"
+    },
+    {
+      "id": "pocheon-7042-lee",
+      "speaker": "이가희",
+      "role": "기업 스토리텔러·작가",
+      "title": "AI시대의 리더들: 고개를 들어 한국을 보라",
+      "date": "2026-12-16",
+      "time": "19:00~21:00",
+      "place": "포천시 면암중앙도서관",
+      "host": "포천시 면암중앙도서관",
+      "source": "https://lib.pocheon.go.kr/intro/lectureDetail.do?lectureIdx=7042&manageCd=MA",
+      "category": "AI·IT, 경영",
+      "status": "행사 공지",
+      "foundOn": "2026-11-25",
+      "matchRole": "",
+      "newSpeaker": true
+    },
+    {
+      "id": "yonsei-78931-hwang",
+      "speaker": "황우성",
+      "role": "카카오 AI Search Modeling Leader",
+      "title": "졸업생 초청 특강 (LLM 보안 세미나)",
+      "date": "2026-12-02",
+      "time": "17:10~18:30",
+      "place": "연세대학교 미래캠퍼스 컨버전스홀 323호",
+      "host": "연세대학교 미래캠퍼스 AI부트캠프사업단·대학원 미래혁신지원센터",
+      "source": "https://aibootcamp.yonsei.ac.kr/aibootcamp/board/d_notice.do?articleNo=78931&mode=view",
+      "category": "AI·IT",
+      "status": "행사 공지",
+      "foundOn": "2026-11-25",
+      "matchRole": "",
+      "newSpeaker": true
     }
   ]
 };
