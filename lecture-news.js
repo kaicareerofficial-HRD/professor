@@ -1,5 +1,5 @@
 window.LECTURE_NEWS = {
-  "checkedOn": "2026-11-25",
+  "checkedOn": "2026-11-26",
   "items": [
     {
       "id": "ddj-20261125-ai",
@@ -208,6 +208,38 @@ window.LECTURE_NEWS = {
       "category": "AI·IT",
       "status": "행사 공지",
       "foundOn": "2026-11-25",
+      "matchRole": "",
+      "newSpeaker": true
+    },
+    {
+      "id": "eplib-237304-lee",
+      "speaker": "이시한",
+      "role": "작가",
+      "title": "인간보다 똑똑한 자율주행차를 만든다면?",
+      "date": "2026-12-06",
+      "time": "14:00~16:00",
+      "place": "은평구립도서관 지하 1층 다목적실",
+      "host": "은평구립도서관",
+      "source": "https://www.eplib.or.kr/eplib/menu/10264/program/30028/eventLectureDetail.do?currentPageNo=1&lectureIdx=237304&manageCd=MA&searchStatus=OPEN",
+      "category": "AI·IT",
+      "status": "행사 공지",
+      "foundOn": "2026-11-26",
+      "matchRole": "",
+      "newSpeaker": true
+    },
+    {
+      "id": "eplib-237304-geum",
+      "speaker": "금준경",
+      "role": "작가",
+      "title": "슬기로운 인공지능, AI 활용법",
+      "date": "2026-12-13",
+      "time": "14:00~16:00",
+      "place": "은평구립도서관 지하 1층 다목적실",
+      "host": "은평구립도서관",
+      "source": "https://www.eplib.or.kr/eplib/menu/10264/program/30028/eventLectureDetail.do?currentPageNo=1&lectureIdx=237304&manageCd=MA&searchStatus=OPEN",
+      "category": "AI·IT",
+      "status": "행사 공지",
+      "foundOn": "2026-11-26",
       "matchRole": "",
       "newSpeaker": true
     }
