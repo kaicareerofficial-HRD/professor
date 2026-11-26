@@ -1,5 +1,5 @@
 window.LECTURE_NEWS = {
-  "checkedOn": "2026-11-26",
+  "checkedOn": "2026-11-27",
   "items": [
     {
       "id": "ddj-20261125-ai",
@@ -10,12 +10,13 @@ window.LECTURE_NEWS = {
       "time": "14:00",
       "place": "대전 동구청 12층 대강당",
       "host": "대전 동구·가오도서관",
-      "source": "https://www.u-library.kr/bbs/content/1_3401",
+      "source": "https://www.donggu.go.kr/dg/kor/article/newsNSEW/144161",
       "category": "AI·IT, 교육",
       "matchRole": "물리학",
       "newSpeaker": false,
-      "status": "행사 공지",
-      "foundOn": "2026-11-21"
+      "status": "개최 확인",
+      "foundOn": "2026-11-21",
+      "speakerId": "pnf-1876"
     },
     {
       "id": "jinju-20261121-history",
