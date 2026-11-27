@@ -1,5 +1,5 @@
 window.LECTURE_NEWS = {
-  "checkedOn": "2026-11-27",
+  "checkedOn": "2026-11-28",
   "items": [
     {
       "id": "ddj-20261125-ai",
