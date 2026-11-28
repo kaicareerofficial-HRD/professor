@@ -86,7 +86,18 @@ function toast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>$('status').hidden=true,3200);
 }
-function persist(rows) { localStorage.setItem(KEY,JSON.stringify(rows)); changed = rows; }
+function persist(rows) {
+  const existing=new Map(changed.map(row=>[row.id,row]));
+  const dated=rows.map(row=>{
+    const previous=existing.get(row.id);
+    const addedOn=previous?.addedOn || row.addedOn;
+    if(addedOn)return {...row,addedOn};
+    if(previous || seedById.has(row.id) || row.id.startsWith('news-'))return row;
+    return {...row,addedOn:todayKorea()};
+  });
+  localStorage.setItem(KEY,JSON.stringify(dated));
+  changed=dated;
+}
 function save(row) { persist([...changed.filter(r=>r.id!==row.id),row]); }
 function categories() {
   const current = $('category').value;
@@ -428,7 +439,7 @@ directoryIntro.insertAdjacentHTML('beforebegin',
     '<section id="lecture-news" aria-labelledby="lecture-news-title" class="box" style="margin-bottom:18px">'+
       '<div class="sectionhead"><h1 id="lecture-news-title">오늘의 강의 뉴스</h1>'+
       '<button type="button" id="news-pause" aria-pressed="false">흐름 멈춤</button></div><p id="lecture-news-date"></p>'+
-      '<div id="lecture-news-items"></div></section>'+
+      '<p id="home-speaker-count" aria-live="polite"></p><div id="lecture-news-items"></div></section>'+
     '<section class="intro"><div><h2>주제별 강의 현황</h2><p>주제를 선택하면 강사별 프로필과 등록된 강의 이력을 볼 수 있습니다.</p></div>'+
     '<button type="button" class="primary" id="topic-add">＋ 강사 등록</button></section>'+
     '<div class="box" id="topic-filter"><label for="topic-search">강의 주제 검색</label>'+
@@ -451,37 +462,36 @@ function newsStrip(label,headlines) {
     '<div class="news-line news-copy" aria-hidden="true" inert>'+headlines+'</div></div></div>';
 }
 
-function dailyNewsAdditions(items,today,speakers) {
-  const knownNames=new Set(items.filter(item=>item.newSpeaker && item.foundOn && item.foundOn<today).map(item=>normalize(item.speaker)));
-  const byName=new Map();
-  const byTitle=new Map();
+function recentSpeakerAdditions(items,today,speakers) {
+  const firstNewsDate=new Map();
   for(const item of items){
-    if(item.foundOn!==today)continue;
-    const name=normalize(item.speaker),title=normalize(item.title);
-    if(!byTitle.has(title))byTitle.set(title,item);
-    if(!item.newSpeaker || knownNames.has(name) || byName.has(name))continue;
-    const speaker=speakers.find(s=>s.id==='news-'+name);
-    if(speaker)byName.set(name,{speaker,item});
+    if(!item.newSpeaker || !item.foundOn || item.foundOn>today)continue;
+    const id='news-'+normalize(item.speaker);
+    const first=firstNewsDate.get(id);
+    if(!first || item.foundOn<first)firstNewsDate.set(id,item.foundOn);
   }
-  return {people:[...byName.values()],topics:[...byTitle.values()]};
+  return speakers.map(speaker=>{
+    const scan=speaker.id.match(/^scan-(\d{4})(\d{2})(\d{2})-\d+$/);
+    const addedOn=firstNewsDate.get(speaker.id) || speaker.addedOn || (scan?scan.slice(1).join('-'):'');
+    return {speaker,addedOn};
+  }).filter(({addedOn})=>/^\d{4}-\d{2}-\d{2}$/.test(addedOn) && addedOn<=today)
+    .sort((a,b)=>b.addedOn.localeCompare(a.addedOn) || a.speaker.name.localeCompare(b.speaker.name,'ko'))
+    .slice(0,12);
 }
 
 function drawLectureNews(speakers) {
   const today=todayKorea();
-  const recent=new Date(today+'T00:00:00+09:00');
-  recent.setUTCDate(recent.getUTCDate()-7);
-  const cutoff=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(recent);
+  const evaluated=speakers.filter(speaker=>speaker.reviews.some(review=>grades.includes(gradeOf(review)))).length;
+  $('home-speaker-count').textContent='등록 강사 '+speakers.length+'명 · 평가된 강사 '+evaluated+'명';
   $('lecture-news-date').textContent=newsData.checkedOn ? newsData.checkedOn+' 확인 · 한국시간' : '확인된 강의 뉴스를 준비 중입니다.';
-  const ordered=publicNews.filter(item=>item.date>=cutoff).sort((a,b)=>{
-    const first=a.date>=today, second=b.date>=today;
-    if(first!==second)return first?-1:1;
-    return (first?a.date.localeCompare(b.date):b.date.localeCompare(a.date)) || (a.time||'').localeCompare(b.time||'');
-  });
-  const entries=ordered.slice(0,12);
+  const entries=publicNews.filter(item=>item.date>=today)
+    .sort((a,b)=>a.date.localeCompare(b.date) || (a.time||'').localeCompare(b.time||'')).slice(0,12);
   const ticker=$('lecture-news-items');
   const pause=$('news-pause');
-  const daily=dailyNewsAdditions(publicNews,today,speakers);
-  pause.hidden=!(entries.length||daily.people.length||daily.topics.length) || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const people=recentSpeakerAdditions(publicNews,today,speakers);
+  const topics=[...new Map(publicNews.filter(item=>item.foundOn===today && item.date>=today)
+    .map(item=>[normalize(item.title),item])).values()];
+  pause.hidden=!(entries.length||people.length||topics.length) || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const headline=item=>{
     const speaker=speakers.find(s=>normalize(s.name)===normalize(item.speaker) && s.events.some(e=>newsLectureMatch(e,item)));
     const metadata=[item.date,item.time,item.place,item.status].filter(Boolean).map(esc).join(' · ');
@@ -490,18 +500,18 @@ function drawLectureNews(speakers) {
       (speaker?' <button type="button" data-person="'+esc(speaker.id)+'" aria-label="'+esc(item.speaker)+' 프로필">프로필</button>':'')+'</span>';
   };
   const rows=[entries.filter((_,index)=>index%2===0),entries.filter((_,index)=>index%2===1)];
-  const speakerLine=daily.people.map(({speaker,item})=>'<span class="news-headline">'+
-    '<button type="button" data-person="'+esc(speaker.id)+'">'+esc(item.speaker)+'</button>'+
-    '<small>'+esc(item.role)+'</small></span>').join('');
-  const topicLine=daily.topics.map(item=>'<span class="news-headline">'+link(item.source,item.title)+
+  const speakerLine=people.map(({speaker,addedOn})=>'<span class="news-headline">'+
+    '<button type="button" data-person="'+esc(speaker.id)+'">'+esc(speaker.name)+'</button>'+
+    '<small>'+esc([addedOn,speaker.role].filter(Boolean).join(' · '))+'</small></span>').join('');
+  const topicLine=topics.map(item=>'<span class="news-headline">'+link(item.source,item.title)+
     ' <small>'+esc(item.speaker+' · '+item.date)+'</small></span>').join('');
   const news=entries.length?rows.filter(row=>row.length).map((row,index)=>
     newsStrip('강의 뉴스 '+(index+1)+'줄',row.map(headline).join(''))).join(''):
-    empty('최근 확인된 강의 뉴스가 없습니다.');
+    empty('오늘 이후 예정된 강의 뉴스가 없습니다.');
   ticker.innerHTML=news+
-    '<section style="margin-top:12px"><h2 style="font-size:1rem;margin-bottom:4px">오늘 추가된 강사 <small>'+daily.people.length+'명</small></h2>'+
-      (speakerLine?newsStrip('오늘 추가된 강사',speakerLine):empty('오늘 추가된 강사가 없습니다.'))+'</section>'+
-    '<section style="margin-top:12px"><h2 style="font-size:1rem;margin-bottom:4px">오늘 추가된 강의 주제 <small>'+daily.topics.length+'개</small></h2>'+
+    '<section style="margin-top:12px"><h2 style="font-size:1rem;margin-bottom:4px">최근 추가된 강사 <small>'+people.length+'명</small></h2>'+
+      (speakerLine?newsStrip('최근 추가된 강사',speakerLine):empty('최근 추가된 강사가 없습니다.'))+'</section>'+
+    '<section style="margin-top:12px"><h2 style="font-size:1rem;margin-bottom:4px">오늘 추가된 강의 주제 <small>'+topics.length+'개</small></h2>'+
       (topicLine?newsStrip('오늘 추가된 강의 주제',topicLine):empty('오늘 추가된 강의 주제가 없습니다.'))+'</section>';
 }
 $('news-pause').onclick=()=>{
